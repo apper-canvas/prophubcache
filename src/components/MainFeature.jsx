@@ -967,7 +967,6 @@ description: '',
           </motion.div>
         )}
       </AnimatePresence>
-</AnimatePresence>
       <AnimatePresence>
         {viewingProperty && (
           <ViewPropertyModal
