@@ -71,6 +71,35 @@ const MainFeature = () => {
       notes: 'First viewing'
     }
   ])
+// Contracts state
+  const [contracts, setContracts] = useState([
+    {
+      id: '1',
+      propertyId: '1',
+      clientId: '1',
+      contractType: 'Purchase Agreement',
+      status: 'Active',
+      value: 450000,
+      startDate: new Date(),
+      endDate: addDays(new Date(), 30),
+      signedDate: null,
+      documents: ['purchase_agreement.pdf', 'property_disclosure.pdf'],
+      notes: 'Standard purchase agreement'
+    },
+    {
+      id: '2',
+      propertyId: '2',
+      clientId: '2',
+      contractType: 'Listing Agreement',
+      status: 'Signed',
+      value: 675000,
+      startDate: addDays(new Date(), -10),
+      endDate: addDays(new Date(), 80),
+      signedDate: addDays(new Date(), -5),
+      documents: ['listing_agreement.pdf'],
+      notes: 'Exclusive listing contract'
+    }
+  ])
 
   const [newProperty, setNewProperty] = useState({
     title: '',
@@ -83,6 +112,44 @@ const MainFeature = () => {
 description: '',
     url: ''
   })
+// Contract management state
+  const [newContract, setNewContract] = useState({
+    propertyId: '',
+    clientId: '',
+    contractType: 'Purchase Agreement',
+    status: 'Draft',
+    value: '',
+    startDate: '',
+    endDate: '',
+    notes: '',
+    documents: []
+  })
+  
+  const [showContractForm, setShowContractForm] = useState(false)
+  const [contractSearchTerm, setContractSearchTerm] = useState('')
+  const [contractFilterStatus, setContractFilterStatus] = useState('All')
+  const [contractFilterType, setContractFilterType] = useState('All')
+  const [editingContractId, setEditingContractId] = useState(null)
+  const [editContract, setEditContract] = useState({
+    propertyId: '',
+    clientId: '',
+    contractType: 'Purchase Agreement',
+    status: 'Draft',
+    value: '',
+    startDate: '',
+    endDate: '',
+    notes: '',
+    documents: []
+  })
+  
+  const contractStatusColors = {
+    'Draft': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+    'Active': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    'Pending': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    'Signed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    'Expired': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    'Cancelled': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+  }
 
 // Appointment management state
   const [newAppointment, setNewAppointment] = useState({
@@ -276,7 +343,13 @@ description: '',
     return matchesSearch && matchesFilter
   })
 
-  const tabs = [
+const tabs = [
+    { id: 'properties', label: 'Properties', icon: 'Building2' },
+    { id: 'clients', label: 'Clients', icon: 'Users' },
+    { id: 'appointments', label: 'Appointments', icon: 'Calendar' },
+    { id: 'contracts', label: 'Contracts', icon: 'FileText' },
+    { id: 'analytics', label: 'Analytics', icon: 'BarChart3' }
+  ]
     { id: 'properties', label: 'Properties', icon: 'Building2' },
     { id: 'clients', label: 'Clients', icon: 'Users' },
     { id: 'appointments', label: 'Appointments', icon: 'Calendar' },
@@ -295,6 +368,167 @@ description: '',
     'Qualified': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     'Inactive': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }
+// Contract management functions
+  const handleAddContract = (e) => {
+    e.preventDefault()
+    if (!newContract.propertyId || !newContract.clientId || !newContract.value || !newContract.startDate || !newContract.endDate) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Validate dates
+    const startDate = new Date(newContract.startDate)
+    const endDate = new Date(newContract.endDate)
+    
+    if (endDate <= startDate) {
+      toast.error('End date must be after start date')
+      return
+    }
+
+    const contract = {
+      id: Date.now().toString(),
+      propertyId: newContract.propertyId,
+      clientId: newContract.clientId,
+      contractType: newContract.contractType,
+      status: newContract.status,
+      value: parseFloat(newContract.value),
+      startDate: startDate,
+      endDate: endDate,
+      signedDate: newContract.status === 'Signed' ? new Date() : null,
+      documents: [],
+      notes: newContract.notes
+    }
+
+    setContracts([...contracts, contract])
+    setNewContract({
+      propertyId: '',
+      clientId: '',
+      contractType: 'Purchase Agreement',
+      status: 'Draft',
+      value: '',
+      startDate: '',
+      endDate: '',
+      notes: '',
+      documents: []
+    })
+    setShowContractForm(false)
+    toast.success('Contract created successfully!')
+  }
+
+  const handleEditContract = (contract) => {
+    setEditingContractId(contract.id)
+    setEditContract({
+      propertyId: contract.propertyId,
+      clientId: contract.clientId,
+      contractType: contract.contractType,
+      status: contract.status,
+      value: contract.value.toString(),
+      startDate: format(new Date(contract.startDate), 'yyyy-MM-dd'),
+      endDate: format(new Date(contract.endDate), 'yyyy-MM-dd'),
+      notes: contract.notes,
+      documents: contract.documents
+    })
+  }
+
+  const handleSaveContractEdit = (e) => {
+    e.preventDefault()
+    if (!editContract.propertyId || !editContract.clientId || !editContract.value || !editContract.startDate || !editContract.endDate) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Validate dates
+    const startDate = new Date(editContract.startDate)
+    const endDate = new Date(editContract.endDate)
+    
+    if (endDate <= startDate) {
+      toast.error('End date must be after start date')
+      return
+    }
+
+    const updatedContract = {
+      propertyId: editContract.propertyId,
+      clientId: editContract.clientId,
+      contractType: editContract.contractType,
+      status: editContract.status,
+      value: parseFloat(editContract.value),
+      startDate: startDate,
+      endDate: endDate,
+      signedDate: editContract.status === 'Signed' && !contracts.find(c => c.id === editingContractId)?.signedDate ? new Date() : contracts.find(c => c.id === editingContractId)?.signedDate,
+      notes: editContract.notes,
+      documents: editContract.documents
+    }
+
+    setContracts(contracts.map(contract => 
+      contract.id === editingContractId 
+        ? { ...contract, ...updatedContract }
+        : contract
+    ))
+
+    setEditingContractId(null)
+    setEditContract({
+      propertyId: '',
+      clientId: '',
+      contractType: 'Purchase Agreement',
+      status: 'Draft',
+      value: '',
+      startDate: '',
+      endDate: '',
+      notes: '',
+      documents: []
+    })
+    toast.success('Contract updated successfully!')
+  }
+
+  const handleCancelContractEdit = () => {
+    setEditingContractId(null)
+    setEditContract({
+      propertyId: '',
+      clientId: '',
+      contractType: 'Purchase Agreement',
+      status: 'Draft',
+      value: '',
+      startDate: '',
+      endDate: '',
+      notes: '',
+      documents: []
+    })
+  }
+
+  const updateContractStatus = (id, newStatus) => {
+    setContracts(contracts.map(contract => 
+      contract.id === id ? { 
+        ...contract, 
+        status: newStatus,
+        signedDate: newStatus === 'Signed' && !contract.signedDate ? new Date() : contract.signedDate
+      } : contract
+    ))
+    toast.success(`Contract status updated to ${newStatus}`)
+  }
+
+  const deleteContract = (id) => {
+    if (window.confirm('Are you sure you want to delete this contract?')) {
+      setContracts(contracts.filter(contract => contract.id !== id))
+      toast.success('Contract deleted successfully!')
+    }
+  }
+
+  const filteredContracts = contracts.filter(contract => {
+    const property = properties.find(p => p.id === contract.propertyId)
+    const client = clients.find(c => c.id === contract.clientId)
+    
+    const matchesSearch = contractSearchTerm === '' || 
+      (property?.title.toLowerCase().includes(contractSearchTerm.toLowerCase())) ||
+      (property?.address.toLowerCase().includes(contractSearchTerm.toLowerCase())) ||
+      (client?.name.toLowerCase().includes(contractSearchTerm.toLowerCase())) ||
+      (contract.contractType.toLowerCase().includes(contractSearchTerm.toLowerCase())) ||
+      (contract.notes.toLowerCase().includes(contractSearchTerm.toLowerCase()))
+    
+    const matchesStatusFilter = contractFilterStatus === 'All' || contract.status === contractFilterStatus
+    const matchesTypeFilter = contractFilterType === 'All' || contract.contractType === contractFilterType
+    
+    return matchesSearch && matchesStatusFilter && matchesTypeFilter
+  })
 // Client management functions
   const handleAddClient = (e) => {
     e.preventDefault()
@@ -702,7 +936,7 @@ description: '',
         {[
           { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
           { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-{ label: 'Appointments', value: appointments.filter(a => a.status === 'Scheduled' || a.status === 'Confirmed').length, icon: 'Calendar', color: 'from-purple-500 to-purple-600' },
+{ label: 'Active Contracts', value: contracts.filter(c => c.status === 'Active' || c.status === 'Signed').length, icon: 'FileText', color: 'from-orange-500 to-orange-600' }
           { label: 'Revenue', value: '$125K', icon: 'TrendingUp', color: 'from-purple-500 to-purple-600' }
         ].map((stat, index) => (
           <motion.div
@@ -1869,6 +2103,470 @@ description: '',
                     className="btn-primary"
                   >
                     Schedule Your First Appointment
+                  </button>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+{activeTab === 'contracts' && (
+          <motion.div
+            key="contracts"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            {/* Contracts Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+                  <input
+                    type="text"
+                    placeholder="Search contracts..."
+                    value={contractSearchTerm}
+                    onChange={(e) => setContractSearchTerm(e.target.value)}
+                    className="input-field pl-10"
+                  />
+                </div>
+                <select
+                  value={contractFilterStatus}
+                  onChange={(e) => setContractFilterStatus(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Status</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Active">Active</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Signed">Signed</option>
+                  <option value="Expired">Expired</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <select
+                  value={contractFilterType}
+                  onChange={(e) => setContractFilterType(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Types</option>
+                  <option value="Purchase Agreement">Purchase Agreement</option>
+                  <option value="Listing Agreement">Listing Agreement</option>
+                  <option value="Lease Agreement">Lease Agreement</option>
+                  <option value="Service Contract">Service Contract</option>
+                </select>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowContractForm(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <ApperIcon name="Plus" className="w-5 h-5" />
+                <span>Create Contract</span>
+              </motion.button>
+            </div>
+
+            {/* Add Contract Form */}
+            <AnimatePresence>
+              {showContractForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="card p-6"
+                >
+                  <form onSubmit={handleAddContract} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                      Create New Contract
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label-text">Property *</label>
+                        <select
+                          value={newContract.propertyId}
+                          onChange={(e) => setNewContract({...newContract, propertyId: e.target.value})}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Select a property</option>
+                          {properties.map((property) => (
+                            <option key={property.id} value={property.id}>
+                              {property.title} - {property.address}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Client *</label>
+                        <select
+                          value={newContract.clientId}
+                          onChange={(e) => setNewContract({...newContract, clientId: e.target.value})}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Select a client</option>
+                          {clients.map((client) => (
+                            <option key={client.id} value={client.id}>
+                              {client.name} - {client.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Contract Type</label>
+                        <select
+                          value={newContract.contractType}
+                          onChange={(e) => setNewContract({...newContract, contractType: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Purchase Agreement">Purchase Agreement</option>
+                          <option value="Listing Agreement">Listing Agreement</option>
+                          <option value="Lease Agreement">Lease Agreement</option>
+                          <option value="Service Contract">Service Contract</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Contract Value *</label>
+                        <input
+                          type="number"
+                          value={newContract.value}
+                          onChange={(e) => setNewContract({...newContract, value: e.target.value})}
+                          className="input-field"
+                          placeholder="0"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Start Date *</label>
+                        <input
+                          type="date"
+                          value={newContract.startDate}
+                          onChange={(e) => setNewContract({...newContract, startDate: e.target.value})}
+                          className="input-field"
+                          required
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">End Date *</label>
+                        <input
+                          type="date"
+                          value={newContract.endDate}
+                          onChange={(e) => setNewContract({...newContract, endDate: e.target.value})}
+                          className="input-field"
+                          required
+                          min={newContract.startDate || format(new Date(), 'yyyy-MM-dd')}
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Status</label>
+                        <select
+                          value={newContract.status}
+                          onChange={(e) => setNewContract({...newContract, status: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Draft">Draft</option>
+                          <option value="Active">Active</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Signed">Signed</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="label-text">Notes</label>
+                        <textarea
+                          value={newContract.notes}
+                          onChange={(e) => setNewContract({...newContract, notes: e.target.value})}
+                          className="input-field"
+                          rows="3"
+                          placeholder="Additional notes about the contract..."
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <button type="submit" className="btn-primary">
+                        Create Contract
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowContractForm(false)}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Contracts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredContracts.map((contract, index) => {
+                const property = properties.find(p => p.id === contract.propertyId)
+                const client = clients.find(c => c.id === contract.clientId)
+                
+                return (
+                  <motion.div
+                    key={contract.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="card card-hover"
+                  >
+                    {editingContractId === contract.id ? (
+                      <div className="p-6">
+                        <form onSubmit={handleSaveContractEdit} className="space-y-4">
+                          <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                            Edit Contract
+                          </h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="label-text">Property *</label>
+                              <select
+                                value={editContract.propertyId}
+                                onChange={(e) => setEditContract({...editContract, propertyId: e.target.value})}
+                                className="input-field"
+                                required
+                              >
+                                <option value="">Select a property</option>
+                                {properties.map((property) => (
+                                  <option key={property.id} value={property.id}>
+                                    {property.title} - {property.address}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label-text">Client *</label>
+                              <select
+                                value={editContract.clientId}
+                                onChange={(e) => setEditContract({...editContract, clientId: e.target.value})}
+                                className="input-field"
+                                required
+                              >
+                                <option value="">Select a client</option>
+                                {clients.map((client) => (
+                                  <option key={client.id} value={client.id}>
+                                    {client.name} - {client.email}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="label-text">Contract Type</label>
+                                <select
+                                  value={editContract.contractType}
+                                  onChange={(e) => setEditContract({...editContract, contractType: e.target.value})}
+                                  className="input-field"
+                                >
+                                  <option value="Purchase Agreement">Purchase Agreement</option>
+                                  <option value="Listing Agreement">Listing Agreement</option>
+                                  <option value="Lease Agreement">Lease Agreement</option>
+                                  <option value="Service Contract">Service Contract</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="label-text">Contract Value *</label>
+                                <input
+                                  type="number"
+                                  value={editContract.value}
+                                  onChange={(e) => setEditContract({...editContract, value: e.target.value})}
+                                  className="input-field"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="label-text">Start Date *</label>
+                                <input
+                                  type="date"
+                                  value={editContract.startDate}
+                                  onChange={(e) => setEditContract({...editContract, startDate: e.target.value})}
+                                  className="input-field"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="label-text">End Date *</label>
+                                <input
+                                  type="date"
+                                  value={editContract.endDate}
+                                  onChange={(e) => setEditContract({...editContract, endDate: e.target.value})}
+                                  className="input-field"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="label-text">Status</label>
+                              <select
+                                value={editContract.status}
+                                onChange={(e) => setEditContract({...editContract, status: e.target.value})}
+                                className="input-field"
+                              >
+                                <option value="Draft">Draft</option>
+                                <option value="Active">Active</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Signed">Signed</option>
+                                <option value="Expired">Expired</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label-text">Notes</label>
+                              <textarea
+                                value={editContract.notes}
+                                onChange={(e) => setEditContract({...editContract, notes: e.target.value})}
+                                className="input-field"
+                                rows="3"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                            <button type="submit" className="btn-primary">
+                              Save Changes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelContractEdit}
+                              className="btn-secondary"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
+                              {contract.contractType}
+                            </h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${contractStatusColors[contract.status]}`}>
+                              {contract.status}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-primary">
+                              ${contract.value.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="Building2" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{property?.title || 'Property not found'}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="MapPin" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{property?.address || 'Address not available'}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="User" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{client?.name || 'Client not found'}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="Calendar" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">
+                              {format(new Date(contract.startDate), 'MMM dd, yyyy')} - {format(new Date(contract.endDate), 'MMM dd, yyyy')}
+                            </span>
+                          </div>
+                          {contract.signedDate && (
+                            <div className="flex items-center text-surface-600 dark:text-surface-400">
+                              <ApperIcon name="CheckCircle" className="w-4 h-4 mr-3" />
+                              <span className="text-sm">Signed on {format(new Date(contract.signedDate), 'MMM dd, yyyy')}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {contract.documents && contract.documents.length > 0 && (
+                          <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3 mb-4">
+                            <h4 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                              Documents ({contract.documents.length})
+                            </h4>
+                            <div className="space-y-1">
+                              {contract.documents.map((doc, docIndex) => (
+                                <div key={docIndex} className="flex items-center text-sm text-surface-600 dark:text-surface-400">
+                                  <ApperIcon name="FileText" className="w-3 h-3 mr-2" />
+                                  <span>{doc}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {contract.notes && (
+                          <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-surface-600 dark:text-surface-400">
+                              {contract.notes}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mb-4">
+                          <select
+                            value={contract.status}
+                            onChange={(e) => updateContractStatus(contract.id, e.target.value)}
+                            className="text-xs px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300"
+                          >
+                            <option value="Draft">Draft</option>
+                            <option value="Active">Active</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Signed">Signed</option>
+                            <option value="Expired">Expired</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleEditContract(contract)}
+                            className="flex-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <ApperIcon name="Edit" className="w-4 h-4" />
+                            <span>Edit</span>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => deleteContract(contract.id)}
+                            className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <ApperIcon name="Trash2" className="w-4 h-4" />
+                            <span>Delete</span>
+                          </motion.button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {filteredContracts.length === 0 && (
+              <div className="text-center py-12">
+                <ApperIcon name="FileText" className="w-16 h-16 text-surface-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-surface-900 dark:text-surface-100 mb-2">
+                  No contracts found
+                </h3>
+                <p className="text-surface-600 dark:text-surface-400 mb-4">
+                  {contractSearchTerm || contractFilterStatus !== 'All' || contractFilterType !== 'All'
+                    ? 'Try adjusting your search or filter criteria'
+                    : 'Get started by creating your first contract'
+                  }
+                </p>
+                {!contractSearchTerm && contractFilterStatus === 'All' && contractFilterType === 'All' && (
+                  <button
+                    onClick={() => setShowContractForm(true)}
+                    className="btn-primary"
+                  >
+                    Create Your First Contract
                   </button>
                 )}
               </div>
