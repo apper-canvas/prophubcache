@@ -110,6 +110,7 @@ const MainFeature = () => {
     squareFootage: '',
     propertyType: 'House',
 description: '',
+description: '',
     url: ''
   })
 // Contract management state
@@ -222,6 +223,7 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
     squareFootage: '',
     propertyType: 'House',
 description: '',
+description: '',
     url: ''
   })
 
@@ -235,6 +237,7 @@ description: '',
       bathrooms: property.bathrooms.toString(),
       squareFootage: property.squareFootage.toString(),
       propertyType: property.propertyType,
+description: property.description || '',
 description: property.description || '',
       url: property.url || ''
     })
@@ -256,6 +259,7 @@ description: property.description || '',
       squareFootage: parseInt(editProperty.squareFootage) || 0,
       propertyType: editProperty.propertyType,
 description: editProperty.description,
+description: editProperty.description,
       url: editProperty.url
     }
 
@@ -273,6 +277,7 @@ description: editProperty.description,
       bedrooms: '',
       bathrooms: '',
       squareFootage: '',
+propertyType: 'House',
 description: '',
       url: ''
     })
@@ -289,6 +294,7 @@ description: '',
       bathrooms: '',
       squareFootage: '',
       propertyType: 'House',
+description: '',
 description: '',
       url: ''
     })
@@ -322,6 +328,7 @@ description: '',
       bedrooms: '',
       bathrooms: '',
       squareFootage: '',
+propertyType: 'House',
 description: '',
       url: ''
     })
@@ -348,11 +355,6 @@ const tabs = [
     { id: 'clients', label: 'Clients', icon: 'Users' },
     { id: 'appointments', label: 'Appointments', icon: 'Calendar' },
     { id: 'contracts', label: 'Contracts', icon: 'FileText' },
-    { id: 'analytics', label: 'Analytics', icon: 'BarChart3' }
-  ]
-    { id: 'properties', label: 'Properties', icon: 'Building2' },
-    { id: 'clients', label: 'Clients', icon: 'Users' },
-    { id: 'appointments', label: 'Appointments', icon: 'Calendar' },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3' }
   ]
 
@@ -936,7 +938,7 @@ const tabs = [
         {[
           { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
           { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-{ label: 'Active Contracts', value: contracts.filter(c => c.status === 'Active' || c.status === 'Signed').length, icon: 'FileText', color: 'from-orange-500 to-orange-600' }
+{ label: 'Active Contracts', value: contracts.filter(c => c.status === 'Active' || c.status === 'Signed').length, icon: 'FileText', color: 'from-orange-500 to-orange-600' },
           { label: 'Revenue', value: '$125K', icon: 'TrendingUp', color: 'from-purple-500 to-purple-600' }
         ].map((stat, index) => (
           <motion.div
@@ -1117,6 +1119,7 @@ const tabs = [
                           <option value="Apartment">Apartment</option>
                         </select>
                       </div>
+</div>
 <div className="md:col-span-2">
                         <label className="label-text">Property URL</label>
                         <input
@@ -1249,6 +1252,7 @@ const tabs = [
                               <option value="Apartment">Apartment</option>
                             </select>
                           </div>
+</div>
 <div className="md:col-span-2">
                             <label className="label-text">Property URL</label>
                             <input
