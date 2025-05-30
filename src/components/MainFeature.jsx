@@ -1351,79 +1351,134 @@ const tabs = [
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        transition={{ duration: 0.6 }}
+        className="mb-12"
       >
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-surface-900 dark:text-surface-100 mb-4">
-          Real Estate <span className="text-gradient">Dashboard</span>
-        </h1>
-        <p className="text-lg text-surface-600 dark:text-surface-400 max-w-2xl">
-          Manage your properties, track leads, and grow your real estate business with our comprehensive platform.
-        </p>
+        <div className="text-center space-y-6">
+          <div className="inline-flex items-center px-4 py-2 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800/30 rounded-full">
+            <span className="text-primary-600 dark:text-primary-400 text-sm font-semibold">
+              ✨ Modern Real Estate Management
+            </span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-surface-900 dark:text-surface-100 leading-tight">
+            Real Estate <span className="text-gradient-rainbow">Dashboard</span>
+          </h1>
+          <p className="text-xl text-surface-600 dark:text-surface-400 max-w-3xl mx-auto leading-relaxed">
+            Manage your properties, track leads, and grow your real estate business with our comprehensive platform designed for modern professionals.
+          </p>
+        </div>
       </motion.div>
 
-      {/* Stats Cards */}
+{/* Stats Cards */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8"
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
       >
         {[
-          { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
-          { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-{ label: 'Total Documents', value: documents.length, icon: 'FolderOpen', color: 'from-orange-500 to-orange-600' },
-          { label: 'Revenue', value: '$125K', icon: 'TrendingUp', color: 'from-purple-500 to-purple-600' }
+          { 
+            label: 'Active Properties', 
+            value: properties.filter(p => p.status === 'Available').length, 
+            icon: 'Home', 
+            gradient: 'from-blue-500 via-blue-600 to-blue-700',
+            bgGradient: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
+            change: '+12%',
+            changeType: 'positive'
+          },
+          { 
+            label: 'Total Clients', 
+            value: clients.length, 
+            icon: 'Users', 
+            gradient: 'from-emerald-500 via-emerald-600 to-emerald-700',
+            bgGradient: 'from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20',
+            change: '+8%',
+            changeType: 'positive'
+          },
+          { 
+            label: 'Documents', 
+            value: documents.length, 
+            icon: 'FolderOpen', 
+            gradient: 'from-amber-500 via-amber-600 to-amber-700',
+            bgGradient: 'from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20',
+            change: '+24%',
+            changeType: 'positive'
+          },
+          { 
+            label: 'Monthly Revenue', 
+            value: '$125K', 
+            icon: 'TrendingUp', 
+            gradient: 'from-purple-500 via-purple-600 to-purple-700',
+            bgGradient: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+            change: '+15%',
+            changeType: 'positive'
+          }
         ].map((stat, index) => (
           <motion.div
             key={index}
-            whileHover={{ y: -4 }}
-            className="card p-6 relative overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.1, duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.02 }}
+            className={`stat-card bg-gradient-to-br ${stat.bgGradient} group cursor-pointer`}
           >
-            <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${stat.color} opacity-10 rounded-full transform translate-x-6 -translate-y-6`} />
-            <div className="flex items-center justify-between">
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-3 bg-gradient-to-br ${stat.gradient} rounded-xl shadow-lg group-hover:shadow-glow transition-all duration-300`}>
+                  <ApperIcon name={stat.icon} className="w-6 h-6 text-white" />
+                </div>
+                <div className={`px-2 py-1 bg-${stat.changeType === 'positive' ? 'success' : 'error'}-100 dark:bg-${stat.changeType === 'positive' ? 'success' : 'error'}-900/20 text-${stat.changeType === 'positive' ? 'success' : 'error'}-600 dark:text-${stat.changeType === 'positive' ? 'success' : 'error'}-400 text-xs font-semibold rounded-full`}>
+                  {stat.change}
+                </div>
+              </div>
               <div>
-                <p className="text-sm font-medium text-surface-600 dark:text-surface-400 mb-1">
+                <p className="text-sm font-semibold text-surface-600 dark:text-surface-400 mb-2">
                   {stat.label}
                 </p>
-                <p className="text-2xl font-bold text-surface-900 dark:text-surface-100">
+                <p className="text-3xl font-bold text-surface-900 dark:text-surface-100">
                   {stat.value}
                 </p>
               </div>
-              <div className={`p-3 bg-gradient-to-br ${stat.color} rounded-xl`}>
-                <ApperIcon name={stat.icon} className="w-6 h-6 text-white" />
-              </div>
             </div>
+            <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300 rounded-2xl`}></div>
           </motion.div>
         ))}
       </motion.div>
 
-      {/* Tab Navigation */}
+{/* Tab Navigation */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="mb-8"
+        transition={{ delay: 0.4, duration: 0.6 }}
+        className="mb-12"
       >
-        <div className="flex flex-wrap gap-2 p-1 bg-surface-100 dark:bg-surface-800 rounded-2xl">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'bg-white dark:bg-surface-700 text-primary shadow-card'
-                  : 'text-surface-600 dark:text-surface-400 hover:text-surface-900 dark:hover:text-surface-200'
-              }`}
-            >
-              <ApperIcon name={tab.icon} className="w-5 h-5" />
-              <span className="hidden sm:block">{tab.label}</span>
-            </button>
-          ))}
+        <div className="glassmorphism-card rounded-3xl p-2">
+          <div className="flex flex-wrap gap-3">
+            {tabs.map((tab, index) => (
+              <motion.button
+                key={tab.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
+                onClick={() => setActiveTab(tab.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex items-center space-x-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'tab-active shadow-glow'
+                    : 'tab-inactive'
+                }`}
+              >
+                <ApperIcon name={tab.icon} className="w-5 h-5" />
+                <span className="hidden sm:block">{tab.label}</span>
+              </motion.button>
+            ))}
+          </div>
         </div>
       </motion.div>
 
