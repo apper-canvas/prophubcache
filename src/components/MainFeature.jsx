@@ -86,6 +86,83 @@ const MainFeature = () => {
   const [showPropertyForm, setShowPropertyForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
+const [editingPropertyId, setEditingPropertyId] = useState(null)
+  const [editProperty, setEditProperty] = useState({
+    title: '',
+    price: '',
+    address: '',
+    bedrooms: '',
+    bathrooms: '',
+    squareFootage: '',
+    propertyType: 'House',
+    description: ''
+  })
+
+  const handleEditProperty = (property) => {
+    setEditingPropertyId(property.id)
+    setEditProperty({
+      title: property.title,
+      price: property.price.toString(),
+      address: property.address,
+      bedrooms: property.bedrooms.toString(),
+      bathrooms: property.bathrooms.toString(),
+      squareFootage: property.squareFootage.toString(),
+      propertyType: property.propertyType,
+      description: property.description || ''
+    })
+  }
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault()
+    if (!editProperty.title || !editProperty.price || !editProperty.address) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    const updatedProperty = {
+      title: editProperty.title,
+      price: parseFloat(editProperty.price),
+      address: editProperty.address,
+      bedrooms: parseInt(editProperty.bedrooms) || 0,
+      bathrooms: parseInt(editProperty.bathrooms) || 0,
+      squareFootage: parseInt(editProperty.squareFootage) || 0,
+      propertyType: editProperty.propertyType,
+      description: editProperty.description
+    }
+
+    setProperties(properties.map(prop => 
+      prop.id === editingPropertyId 
+        ? { ...prop, ...updatedProperty }
+        : prop
+    ))
+
+    setEditingPropertyId(null)
+    setEditProperty({
+      title: '',
+      price: '',
+      address: '',
+      bedrooms: '',
+      bathrooms: '',
+      squareFootage: '',
+      propertyType: 'House',
+      description: ''
+    })
+    toast.success('Property updated successfully!')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingPropertyId(null)
+    setEditProperty({
+      title: '',
+      price: '',
+      address: '',
+      bedrooms: '',
+      bathrooms: '',
+      squareFootage: '',
+      propertyType: 'House',
+      description: ''
+    })
+  }
 
   const handleAddProperty = (e) => {
     e.preventDefault()
@@ -408,41 +485,154 @@ const MainFeature = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
-                      {property.title}
-                    </h3>
-                    <p className="text-surface-600 dark:text-surface-400 mb-4 flex items-center">
-                      <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
-                      {property.address}
-                    </p>
-                    <div className="flex items-center justify-between text-sm text-surface-600 dark:text-surface-400 mb-4">
-                      <span className="flex items-center">
-                        <ApperIcon name="Bed" className="w-4 h-4 mr-1" />
-                        {property.bedrooms} bed
-                      </span>
-                      <span className="flex items-center">
-                        <ApperIcon name="Bath" className="w-4 h-4 mr-1" />
-                        {property.bathrooms} bath
-                      </span>
-                      <span className="flex items-center">
-                        <ApperIcon name="Square" className="w-4 h-4 mr-1" />
-                        {property.squareFootage} sqft
-                      </span>
+{editingPropertyId === property.id ? (
+                    <div className="p-6">
+                      <form onSubmit={handleSaveEdit} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                          Edit Property
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="label-text">Property Title *</label>
+                            <input
+                              type="text"
+                              value={editProperty.title}
+                              onChange={(e) => setEditProperty({...editProperty, title: e.target.value})}
+                              className="input-field"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Price *</label>
+                            <input
+                              type="number"
+                              value={editProperty.price}
+                              onChange={(e) => setEditProperty({...editProperty, price: e.target.value})}
+                              className="input-field"
+                              required
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="label-text">Address *</label>
+                            <input
+                              type="text"
+                              value={editProperty.address}
+                              onChange={(e) => setEditProperty({...editProperty, address: e.target.value})}
+                              className="input-field"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Bedrooms</label>
+                            <input
+                              type="number"
+                              value={editProperty.bedrooms}
+                              onChange={(e) => setEditProperty({...editProperty, bedrooms: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Bathrooms</label>
+                            <input
+                              type="number"
+                              value={editProperty.bathrooms}
+                              onChange={(e) => setEditProperty({...editProperty, bathrooms: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Square Footage</label>
+                            <input
+                              type="number"
+                              value={editProperty.squareFootage}
+                              onChange={(e) => setEditProperty({...editProperty, squareFootage: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Property Type</label>
+                            <select
+                              value={editProperty.propertyType}
+                              onChange={(e) => setEditProperty({...editProperty, propertyType: e.target.value})}
+                              className="input-field"
+                            >
+                              <option value="House">House</option>
+                              <option value="Condo">Condo</option>
+                              <option value="Townhouse">Townhouse</option>
+                              <option value="Apartment">Apartment</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                          <button type="submit" className="btn-primary">
+                            Save Changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="btn-secondary"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                    <div className="flex gap-2">
-                      <select
-                        value={property.status}
-                        onChange={(e) => updatePropertyStatus(property.id, e.target.value)}
-                        className="text-xs px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300"
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Sold">Sold</option>
-                        <option value="Off Market">Off Market</option>
-                      </select>
+                  ) : (
+                    <div className="p-6">
+                      <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
+                        {property.title}
+                      </h3>
+                      <p className="text-surface-600 dark:text-surface-400 mb-4 flex items-center">
+                        <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
+                        {property.address}
+                      </p>
+                      <div className="flex items-center justify-between text-sm text-surface-600 dark:text-surface-400 mb-4">
+                        <span className="flex items-center">
+                          <ApperIcon name="Bed" className="w-4 h-4 mr-1" />
+                          {property.bedrooms} bed
+                        </span>
+                        <span className="flex items-center">
+                          <ApperIcon name="Bath" className="w-4 h-4 mr-1" />
+                          {property.bathrooms} bath
+                        </span>
+                        <span className="flex items-center">
+                          <ApperIcon name="Square" className="w-4 h-4 mr-1" />
+                          {property.squareFootage} sqft
+                        </span>
+                      </div>
+                      <div className="flex gap-2 mb-4">
+                        <select
+                          value={property.status}
+                          onChange={(e) => updatePropertyStatus(property.id, e.target.value)}
+                          className="text-xs px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Sold">Sold</option>
+                          <option value="Off Market">Off Market</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleEditProperty(property)}
+                          className="flex-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Edit" className="w-4 h-4" />
+                          <span>Edit</span>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="flex-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Eye" className="w-4 h-4" />
+                          <span>View</span>
+                        </motion.button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </motion.div>
               ))}
             </div>
