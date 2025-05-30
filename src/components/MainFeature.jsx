@@ -84,6 +84,30 @@ description: '',
     url: ''
   })
 
+// Client management state
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    budget: '',
+    status: 'Active',
+    leadSource: 'Website',
+    notes: ''
+  })
+  
+  const [showClientForm, setShowClientForm] = useState(false)
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
+  const [clientFilterStatus, setClientFilterStatus] = useState('All')
+  const [editingClientId, setEditingClientId] = useState(null)
+  const [editClient, setEditClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    budget: '',
+    status: 'Active',
+    leadSource: 'Website',
+    notes: ''
+  })
   const [showPropertyForm, setShowPropertyForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
@@ -238,6 +262,131 @@ description: '',
     'Qualified': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     'Inactive': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
   }
+// Client management functions
+  const handleAddClient = (e) => {
+    e.preventDefault()
+    if (!newClient.name || !newClient.email || !newClient.phone) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newClient.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    const client = {
+      id: Date.now().toString(),
+      ...newClient,
+      budget: parseFloat(newClient.budget) || 0
+    }
+
+    setClients([...clients, client])
+    setNewClient({
+      name: '',
+      email: '',
+      phone: '',
+      budget: '',
+      status: 'Active',
+      leadSource: 'Website',
+      notes: ''
+    })
+    setShowClientForm(false)
+    toast.success('Client added successfully!')
+  }
+
+  const handleEditClient = (client) => {
+    setEditingClientId(client.id)
+    setEditClient({
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      budget: client.budget.toString(),
+      status: client.status,
+      leadSource: client.leadSource,
+      notes: client.notes
+    })
+  }
+
+  const handleSaveClientEdit = (e) => {
+    e.preventDefault()
+    if (!editClient.name || !editClient.email || !editClient.phone) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(editClient.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    const updatedClient = {
+      name: editClient.name,
+      email: editClient.email,
+      phone: editClient.phone,
+      budget: parseFloat(editClient.budget) || 0,
+      status: editClient.status,
+      leadSource: editClient.leadSource,
+      notes: editClient.notes
+    }
+
+    setClients(clients.map(client => 
+      client.id === editingClientId 
+        ? { ...client, ...updatedClient }
+        : client
+    ))
+
+    setEditingClientId(null)
+    setEditClient({
+      name: '',
+      email: '',
+      phone: '',
+      budget: '',
+      status: 'Active',
+      leadSource: 'Website',
+      notes: ''
+    })
+    toast.success('Client updated successfully!')
+  }
+
+  const handleCancelClientEdit = () => {
+    setEditingClientId(null)
+    setEditClient({
+      name: '',
+      email: '',
+      phone: '',
+      budget: '',
+      status: 'Active',
+      leadSource: 'Website',
+      notes: ''
+    })
+  }
+
+  const updateClientStatus = (id, newStatus) => {
+    setClients(clients.map(client => 
+      client.id === id ? { ...client, status: newStatus } : client
+    ))
+    toast.success(`Client status updated to ${newStatus}`)
+  }
+
+  const deleteClient = (id) => {
+    if (window.confirm('Are you sure you want to delete this client?')) {
+      setClients(clients.filter(client => client.id !== id))
+      toast.success('Client deleted successfully!')
+    }
+  }
+
+  const filteredClients = clients.filter(client => {
+    const matchesSearch = client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                         client.email.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+                         client.phone.includes(clientSearchTerm)
+    const matchesFilter = clientFilterStatus === 'All' || client.status === clientFilterStatus
+    return matchesSearch && matchesFilter
+  })
 // View Property Modal Component
   const ViewPropertyModal = ({ property, onClose }) => {
     if (!property) return null
@@ -783,77 +932,365 @@ description: '',
           </motion.div>
         )}
 
-        {activeTab === 'clients' && (
-          <motion.div
+<motion.div
             key="clients"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="card overflow-hidden">
-              <div className="p-6 border-b border-surface-200 dark:border-surface-700">
-                <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100">
-                  Client Management
-                </h3>
+            {/* Clients Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+                  <input
+                    type="text"
+                    placeholder="Search clients..."
+                    value={clientSearchTerm}
+                    onChange={(e) => setClientSearchTerm(e.target.value)}
+                    className="input-field pl-10"
+                  />
+                </div>
+                <select
+                  value={clientFilterStatus}
+                  onChange={(e) => setClientFilterStatus(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Qualified">Qualified</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-surface-50 dark:bg-surface-900">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">
-                        Client
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">
-                        Contact
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">
-                        Budget
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">
-                        Source
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-200 dark:divide-surface-700">
-                    {clients.map((client) => (
-                      <tr key={client.id} className="hover:bg-surface-50 dark:hover:bg-surface-800">
-                        <td className="px-6 py-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowClientForm(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <ApperIcon name="Plus" className="w-5 h-5" />
+                <span>Add Client</span>
+              </motion.button>
+            </div>
+
+            {/* Add Client Form */}
+            <AnimatePresence>
+              {showClientForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="card p-6"
+                >
+                  <form onSubmit={handleAddClient} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                      Add New Client
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label-text">Full Name *</label>
+                        <input
+                          type="text"
+                          value={newClient.name}
+                          onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                          className="input-field"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Email *</label>
+                        <input
+                          type="email"
+                          value={newClient.email}
+                          onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                          className="input-field"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Phone *</label>
+                        <input
+                          type="tel"
+                          value={newClient.phone}
+                          onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
+                          className="input-field"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Budget</label>
+                        <input
+                          type="number"
+                          value={newClient.budget}
+                          onChange={(e) => setNewClient({...newClient, budget: e.target.value})}
+                          className="input-field"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Status</label>
+                        <select
+                          value={newClient.status}
+                          onChange={(e) => setNewClient({...newClient, status: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Qualified">Qualified</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Lead Source</label>
+                        <select
+                          value={newClient.leadSource}
+                          onChange={(e) => setNewClient({...newClient, leadSource: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Website">Website</option>
+                          <option value="Referral">Referral</option>
+                          <option value="Social Media">Social Media</option>
+                          <option value="Walk-in">Walk-in</option>
+                          <option value="Advertisement">Advertisement</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="label-text">Notes</label>
+                        <textarea
+                          value={newClient.notes}
+                          onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
+                          className="input-field"
+                          rows="3"
+                          placeholder="Additional notes about the client..."
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <button type="submit" className="btn-primary">
+                        Add Client
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowClientForm(false)}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Clients Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredClients.map((client, index) => (
+                <motion.div
+                  key={client.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="card card-hover"
+                >
+                  {editingClientId === client.id ? (
+                    <div className="p-6">
+                      <form onSubmit={handleSaveClientEdit} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                          Edit Client
+                        </h3>
+                        <div className="space-y-4">
                           <div>
-                            <div className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                              {client.name}
-                            </div>
-                            <div className="text-sm text-surface-500 dark:text-surface-400">
-                              {client.notes}
-                            </div>
+                            <label className="label-text">Full Name *</label>
+                            <input
+                              type="text"
+                              value={editClient.name}
+                              onChange={(e) => setEditClient({...editClient, name: e.target.value})}
+                              className="input-field"
+                              required
+                            />
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-surface-900 dark:text-surface-100">{client.email}</div>
-                          <div className="text-sm text-surface-500 dark:text-surface-400">{client.phone}</div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-surface-900 dark:text-surface-100">
-                          ${client.budget.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${clientStatusColors[client.status]}`}>
+                          <div>
+                            <label className="label-text">Email *</label>
+                            <input
+                              type="email"
+                              value={editClient.email}
+                              onChange={(e) => setEditClient({...editClient, email: e.target.value})}
+                              className="input-field"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Phone *</label>
+                            <input
+                              type="tel"
+                              value={editClient.phone}
+                              onChange={(e) => setEditClient({...editClient, phone: e.target.value})}
+                              className="input-field"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Budget</label>
+                            <input
+                              type="number"
+                              value={editClient.budget}
+                              onChange={(e) => setEditClient({...editClient, budget: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Status</label>
+                            <select
+                              value={editClient.status}
+                              onChange={(e) => setEditClient({...editClient, status: e.target.value})}
+                              className="input-field"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="Qualified">Qualified</option>
+                              <option value="Inactive">Inactive</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="label-text">Lead Source</label>
+                            <select
+                              value={editClient.leadSource}
+                              onChange={(e) => setEditClient({...editClient, leadSource: e.target.value})}
+                              className="input-field"
+                            >
+                              <option value="Website">Website</option>
+                              <option value="Referral">Referral</option>
+                              <option value="Social Media">Social Media</option>
+                              <option value="Walk-in">Walk-in</option>
+                              <option value="Advertisement">Advertisement</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="label-text">Notes</label>
+                            <textarea
+                              value={editClient.notes}
+                              onChange={(e) => setEditClient({...editClient, notes: e.target.value})}
+                              className="input-field"
+                              rows="3"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                          <button type="submit" className="btn-primary">
+                            Save Changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelClientEdit}
+                            className="btn-secondary"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
+                            {client.name}
+                          </h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${clientStatusColors[client.status]}`}>
                             {client.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-surface-500 dark:text-surface-400">
-                          {client.leadSource}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center text-surface-600 dark:text-surface-400">
+                          <ApperIcon name="Mail" className="w-4 h-4 mr-3" />
+                          <span className="text-sm">{client.email}</span>
+                        </div>
+                        <div className="flex items-center text-surface-600 dark:text-surface-400">
+                          <ApperIcon name="Phone" className="w-4 h-4 mr-3" />
+                          <span className="text-sm">{client.phone}</span>
+                        </div>
+                        <div className="flex items-center text-surface-600 dark:text-surface-400">
+                          <ApperIcon name="DollarSign" className="w-4 h-4 mr-3" />
+                          <span className="text-sm">${client.budget.toLocaleString()} budget</span>
+                        </div>
+                        <div className="flex items-center text-surface-600 dark:text-surface-400">
+                          <ApperIcon name="Users" className="w-4 h-4 mr-3" />
+                          <span className="text-sm">{client.leadSource}</span>
+                        </div>
+                      </div>
+
+                      {client.notes && (
+                        <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3 mb-4">
+                          <p className="text-sm text-surface-600 dark:text-surface-400">
+                            {client.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <select
+                          value={client.status}
+                          onChange={(e) => updateClientStatus(client.id, e.target.value)}
+                          className="text-xs px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300"
+                        >
+                          <option value="Active">Active</option>
+                          <option value="Qualified">Qualified</option>
+                          <option value="Inactive">Inactive</option>
+                        </select>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleEditClient(client)}
+                          className="flex-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Edit" className="w-4 h-4" />
+                          <span>Edit</span>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => deleteClient(client.id)}
+                          className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Trash2" className="w-4 h-4" />
+                          <span>Delete</span>
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
             </div>
+
+            {filteredClients.length === 0 && (
+              <div className="text-center py-12">
+                <ApperIcon name="Users" className="w-16 h-16 text-surface-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-surface-900 dark:text-surface-100 mb-2">
+                  No clients found
+                </h3>
+                <p className="text-surface-600 dark:text-surface-400 mb-4">
+                  {clientSearchTerm || clientFilterStatus !== 'All' 
+                    ? 'Try adjusting your search or filter criteria'
+                    : 'Get started by adding your first client'
+                  }
+                </p>
+                {!clientSearchTerm && clientFilterStatus === 'All' && (
+                  <button
+                    onClick={() => setShowClientForm(true)}
+                    className="btn-primary"
+                  >
+                    Add Your First Client
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
-        )}
 
         {activeTab === 'appointments' && (
           <motion.div
