@@ -110,7 +110,6 @@ const MainFeature = () => {
     squareFootage: '',
     propertyType: 'House',
 description: '',
-description: '',
     url: ''
   })
 // Contract management state
@@ -223,7 +222,6 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
     squareFootage: '',
     propertyType: 'House',
 description: '',
-description: '',
     url: ''
   })
 
@@ -238,8 +236,7 @@ description: '',
       squareFootage: property.squareFootage.toString(),
       propertyType: property.propertyType,
 description: property.description || '',
-description: property.description || '',
-      url: property.url || ''
+    url: property.url || ''
     })
   }
 
@@ -259,8 +256,7 @@ description: property.description || '',
       squareFootage: parseInt(editProperty.squareFootage) || 0,
       propertyType: editProperty.propertyType,
 description: editProperty.description,
-description: editProperty.description,
-      url: editProperty.url
+    url: editProperty.url
     }
 
     setProperties(properties.map(prop => 
@@ -295,8 +291,7 @@ description: '',
       squareFootage: '',
       propertyType: 'House',
 description: '',
-description: '',
-      url: ''
+    url: ''
     })
   }
 
@@ -1119,7 +1114,26 @@ const tabs = [
                           <option value="Apartment">Apartment</option>
                         </select>
                       </div>
-</div>
+<div className="md:col-span-2">
+                        <label className="label-text">Description</label>
+                        <textarea
+                          value={newProperty.description}
+                          onChange={(e) => setNewProperty({...newProperty, description: e.target.value})}
+                          className="input-field"
+                          rows="3"
+                          placeholder="Property description..."
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="label-text">Property URL</label>
+                        <input
+                          type="url"
+                          value={newProperty.url}
+                          onChange={(e) => setNewProperty({...newProperty, url: e.target.value})}
+                          className="input-field"
+                          placeholder="https://example.com/property"
+                        />
+                      </div>
 <div className="md:col-span-2">
                         <label className="label-text">Property URL</label>
                         <input
@@ -1252,9 +1266,17 @@ const tabs = [
                               <option value="Apartment">Apartment</option>
                             </select>
                           </div>
-</div>
 <div className="md:col-span-2">
-                            <label className="label-text">Property URL</label>
+                            <label className="label-text">Description</label>
+                            <textarea
+                              value={editProperty.description}
+                              onChange={(e) => setEditProperty({...editProperty, description: e.target.value})}
+                              className="input-field"
+                              rows="3"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+<label className="label-text">Property URL</label>
                             <input
                               type="url"
                               value={editProperty.url}
