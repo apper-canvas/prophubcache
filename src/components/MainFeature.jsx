@@ -101,6 +101,116 @@ const MainFeature = () => {
     }
   ])
 
+// Documents state
+  const [documents, setDocuments] = useState([
+    {
+      id: '1',
+      fileName: 'purchase_agreement_main_st.pdf',
+      originalName: 'Purchase Agreement - 123 Main St.pdf',
+      fileType: 'application/pdf',
+      fileSize: 524288, // 512KB
+      category: 'Contracts',
+      uploadDate: new Date(),
+      lastModified: new Date(),
+      associatedType: 'property',
+      associatedId: '1',
+      tags: ['purchase', 'agreement', 'legal'],
+      version: 1,
+      description: 'Purchase agreement for downtown condo',
+      uploadedBy: 'agent1'
+    },
+    {
+      id: '2',
+      fileName: 'property_photos_oak_ave.zip',
+      originalName: 'Property Photos - 456 Oak Ave.zip',
+      fileType: 'application/zip',
+      fileSize: 15728640, // 15MB
+      category: 'Property Photos',
+      uploadDate: addDays(new Date(), -2),
+      lastModified: addDays(new Date(), -2),
+      associatedType: 'property',
+      associatedId: '2',
+      tags: ['photos', 'marketing', 'listing'],
+      version: 1,
+      description: 'Professional photos for suburban home listing',
+      uploadedBy: 'agent1'
+    },
+    {
+      id: '3',
+      fileName: 'client_id_verification.jpg',
+      originalName: 'Sarah Johnson - ID Verification.jpg',
+      fileType: 'image/jpeg',
+      fileSize: 2097152, // 2MB
+      category: 'Client Documents',
+      uploadDate: addDays(new Date(), -1),
+      lastModified: addDays(new Date(), -1),
+      associatedType: 'client',
+      associatedId: '1',
+      tags: ['identification', 'verification', 'kyc'],
+      version: 1,
+      description: 'ID verification document for Sarah Johnson',
+      uploadedBy: 'agent1'
+    }
+  ])
+
+  // Document management state
+  const [newDocument, setNewDocument] = useState({
+    fileName: '',
+    category: 'Property Documents',
+    associatedType: 'property',
+    associatedId: '',
+    tags: '',
+    description: '',
+    file: null
+  })
+  
+  const [showDocumentForm, setShowDocumentForm] = useState(false)
+  const [documentSearchTerm, setDocumentSearchTerm] = useState('')
+  const [documentFilterCategory, setDocumentFilterCategory] = useState('All')
+  const [documentFilterType, setDocumentFilterType] = useState('All')
+  const [viewingDocument, setViewingDocument] = useState(null)
+  const [editingDocumentId, setEditingDocumentId] = useState(null)
+  const [editDocument, setEditDocument] = useState({
+    fileName: '',
+    category: 'Property Documents',
+    associatedType: 'property',
+    associatedId: '',
+    tags: '',
+    description: ''
+  })
+
+  const documentCategories = [
+    'Property Documents',
+    'Property Photos',
+    'Contracts',
+    'Client Documents', 
+    'Financial Documents',
+    'Legal Documents',
+    'Marketing Materials',
+    'Reports',
+    'Correspondence',
+    'Other'
+  ]
+
+  const fileTypeIcons = {
+    'application/pdf': 'FileText',
+    'image/jpeg': 'Image',
+    'image/jpg': 'Image',
+    'image/png': 'Image',
+    'image/gif': 'Image',
+    'application/zip': 'Archive',
+    'application/rar': 'Archive',
+    'application/msword': 'FileText',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'FileText',
+    'application/vnd.ms-excel': 'FileSpreadsheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'FileSpreadsheet',
+    'video/mp4': 'Video',
+    'video/avi': 'Video',
+    'video/mov': 'Video',
+    'audio/mp3': 'Music',
+    'audio/wav': 'Music',
+    'default': 'File'
+  }
   const [newProperty, setNewProperty] = useState({
     title: '',
     price: '',
@@ -349,7 +459,8 @@ const tabs = [
     { id: 'properties', label: 'Properties', icon: 'Building2' },
     { id: 'clients', label: 'Clients', icon: 'Users' },
     { id: 'appointments', label: 'Appointments', icon: 'Calendar' },
-    { id: 'contracts', label: 'Contracts', icon: 'FileText' },
+{ id: 'contracts', label: 'Contracts', icon: 'FileText' },
+{ id: 'documents', label: 'Documents', icon: 'FolderOpen' },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3' }
   ]
 
@@ -790,6 +901,338 @@ const tabs = [
   // Sort appointments by date (upcoming first)
   const sortedAppointments = filteredAppointments.sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate))
 // View Property Modal Component
+// Document management functions
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // File size validation (50MB limit)
+    const maxSize = 50 * 1024 * 1024 // 50MB
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 50MB')
+      return
+    }
+
+    // File type validation
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'application/zip',
+      'application/rar',
+      'video/mp4',
+      'video/avi',
+      'video/mov',
+      'audio/mp3',
+      'audio/wav'
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('File type not supported. Please upload PDF, DOC, images, or archive files.')
+      return
+    }
+
+    setNewDocument({...newDocument, file})
+  }
+
+  const handleAddDocument = (e) => {
+    e.preventDefault()
+    if (!newDocument.file) {
+      toast.error('Please select a file to upload')
+      return
+    }
+
+    // Simulate file upload
+    const document = {
+      id: Date.now().toString(),
+      fileName: `${Date.now()}_${newDocument.file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`,
+      originalName: newDocument.file.name,
+      fileType: newDocument.file.type,
+      fileSize: newDocument.file.size,
+      category: newDocument.category,
+      uploadDate: new Date(),
+      lastModified: new Date(),
+      associatedType: newDocument.associatedType,
+      associatedId: newDocument.associatedId || null,
+      tags: newDocument.tags ? newDocument.tags.split(',').map(tag => tag.trim()) : [],
+      version: 1,
+      description: newDocument.description,
+      uploadedBy: 'agent1'
+    }
+
+    setDocuments([...documents, document])
+    setNewDocument({
+      fileName: '',
+      category: 'Property Documents',
+      associatedType: 'property',
+      associatedId: '',
+      tags: '',
+      description: '',
+      file: null
+    })
+    setShowDocumentForm(false)
+    
+    // Reset file input
+    const fileInput = document.getElementById('document-upload')
+    if (fileInput) fileInput.value = ''
+    
+    toast.success('Document uploaded successfully!')
+  }
+
+  const handleEditDocument = (document) => {
+    setEditingDocumentId(document.id)
+    setEditDocument({
+      fileName: document.originalName,
+      category: document.category,
+      associatedType: document.associatedType,
+      associatedId: document.associatedId || '',
+      tags: document.tags ? document.tags.join(', ') : '',
+      description: document.description
+    })
+  }
+
+  const handleSaveDocumentEdit = (e) => {
+    e.preventDefault()
+    
+    const updatedDocument = {
+      originalName: editDocument.fileName,
+      category: editDocument.category,
+      associatedType: editDocument.associatedType,
+      associatedId: editDocument.associatedId || null,
+      tags: editDocument.tags ? editDocument.tags.split(',').map(tag => tag.trim()) : [],
+      description: editDocument.description,
+      lastModified: new Date(),
+      version: documents.find(d => d.id === editingDocumentId).version + 1
+    }
+
+    setDocuments(documents.map(document => 
+      document.id === editingDocumentId 
+        ? { ...document, ...updatedDocument }
+        : document
+    ))
+
+    setEditingDocumentId(null)
+    setEditDocument({
+      fileName: '',
+      category: 'Property Documents',
+      associatedType: 'property',
+      associatedId: '',
+      tags: '',
+      description: ''
+    })
+    toast.success('Document updated successfully!')
+  }
+
+  const handleCancelDocumentEdit = () => {
+    setEditingDocumentId(null)
+    setEditDocument({
+      fileName: '',
+      category: 'Property Documents',
+      associatedType: 'property',
+      associatedId: '',
+      tags: '',
+      description: ''
+    })
+  }
+
+  const deleteDocument = (id) => {
+    if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      setDocuments(documents.filter(document => document.id !== id))
+      toast.success('Document deleted successfully!')
+    }
+  }
+
+  const downloadDocument = (document) => {
+    // Simulate document download
+    toast.info(`Downloading ${document.originalName}...`)
+    
+    // In a real application, you would:
+    // - Create a download URL from the stored file
+    // - Trigger the download
+    // - Track download events
+    
+    setTimeout(() => {
+      toast.success('Document downloaded successfully!')
+    }, 1000)
+  }
+
+  const filteredDocuments = documents.filter(document => {
+    const matchesSearch = documentSearchTerm === '' || 
+      document.originalName.toLowerCase().includes(documentSearchTerm.toLowerCase()) ||
+      document.description.toLowerCase().includes(documentSearchTerm.toLowerCase()) ||
+      document.tags.some(tag => tag.toLowerCase().includes(documentSearchTerm.toLowerCase()))
+    
+    const matchesCategoryFilter = documentFilterCategory === 'All' || document.category === documentFilterCategory
+    const matchesTypeFilter = documentFilterType === 'All' || document.associatedType === documentFilterType
+    
+    return matchesSearch && matchesCategoryFilter && matchesTypeFilter
+  })
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  // View Document Modal Component
+  const ViewDocumentModal = ({ document, onClose }) => {
+    if (!document) return null
+
+    const getAssociatedEntity = () => {
+      switch (document.associatedType) {
+        case 'property':
+          return properties.find(p => p.id === document.associatedId)
+        case 'client':
+          return clients.find(c => c.id === document.associatedId)
+        case 'contract':
+          return contracts.find(c => c.id === document.associatedId)
+        default:
+          return null
+      }
+    }
+
+    const associatedEntity = getAssociatedEntity()
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white dark:bg-surface-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-6 border-b border-surface-200 dark:border-surface-700">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <ApperIcon 
+                  name={fileTypeIcons[document.fileType] || fileTypeIcons.default} 
+                  className="w-6 h-6 text-primary" 
+                />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-surface-900 dark:text-surface-100">
+                  {document.originalName}
+                </h2>
+                <p className="text-sm text-surface-600 dark:text-surface-400">
+                  {document.category}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+            >
+              <ApperIcon name="X" className="w-5 h-5 text-surface-500" />
+            </button>
+          </div>
+          
+          <div className="p-6 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">File Size</h3>
+                <p className="text-surface-900 dark:text-surface-100">{formatFileSize(document.fileSize)}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Upload Date</h3>
+                <p className="text-surface-900 dark:text-surface-100">{format(new Date(document.uploadDate), 'PPP')}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Last Modified</h3>
+                <p className="text-surface-900 dark:text-surface-100">{format(new Date(document.lastModified), 'PPP')}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Version</h3>
+                <p className="text-surface-900 dark:text-surface-100">v{document.version}</p>
+              </div>
+            </div>
+
+            {associatedEntity && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Associated {document.associatedType}</h3>
+                <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3">
+                  <p className="text-surface-900 dark:text-surface-100 font-medium">
+                    {document.associatedType === 'property' && associatedEntity.title}
+                    {document.associatedType === 'client' && associatedEntity.name}
+                    {document.associatedType === 'contract' && associatedEntity.contractType}
+                  </p>
+                  {document.associatedType === 'property' && (
+                    <p className="text-sm text-surface-600 dark:text-surface-400">{associatedEntity.address}</p>
+                  )}
+                  {document.associatedType === 'client' && (
+                    <p className="text-sm text-surface-600 dark:text-surface-400">{associatedEntity.email}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {document.description && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Description</h3>
+                <p className="text-surface-900 dark:text-surface-100">{document.description}</p>
+              </div>
+            )}
+
+            {document.tags && document.tags.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {document.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => downloadDocument(document)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <ApperIcon name="Download" className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+              <button
+                onClick={() => {
+                  onClose()
+                  handleEditDocument(document)
+                }}
+                className="btn-secondary flex items-center space-x-2"
+              >
+                <ApperIcon name="Edit" className="w-4 h-4" />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="btn-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )
+  }
   const ViewPropertyModal = ({ property, onClose }) => {
     if (!property) return null
 
@@ -933,7 +1376,7 @@ const tabs = [
         {[
           { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
           { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-{ label: 'Active Contracts', value: contracts.filter(c => c.status === 'Active' || c.status === 'Signed').length, icon: 'FileText', color: 'from-orange-500 to-orange-600' },
+{ label: 'Total Documents', value: documents.length, icon: 'FolderOpen', color: 'from-orange-500 to-orange-600' },
           { label: 'Revenue', value: '$125K', icon: 'TrendingUp', color: 'from-purple-500 to-purple-600' }
         ].map((stat, index) => (
           <motion.div
@@ -2599,6 +3042,403 @@ const tabs = [
             )}
           </motion.div>
         )}
+{activeTab === 'documents' && (
+          <motion.div
+            key="documents"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            {/* Documents Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+                  <input
+                    type="text"
+                    placeholder="Search documents..."
+                    value={documentSearchTerm}
+                    onChange={(e) => setDocumentSearchTerm(e.target.value)}
+                    className="input-field pl-10"
+                  />
+                </div>
+                <select
+                  value={documentFilterCategory}
+                  onChange={(e) => setDocumentFilterCategory(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Categories</option>
+                  {documentCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <select
+                  value={documentFilterType}
+                  onChange={(e) => setDocumentFilterType(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Types</option>
+                  <option value="property">Property</option>
+                  <option value="client">Client</option>
+                  <option value="contract">Contract</option>
+                  <option value="general">General</option>
+                </select>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowDocumentForm(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <ApperIcon name="Upload" className="w-5 h-5" />
+                <span>Upload Document</span>
+              </motion.button>
+            </div>
+
+            {/* Upload Document Form */}
+            <AnimatePresence>
+              {showDocumentForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="card p-6"
+                >
+                  <form onSubmit={handleAddDocument} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                      Upload New Document
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="label-text">File Upload *</label>
+                        <div className="border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-xl p-6 text-center hover:border-primary transition-colors">
+                          <input
+                            type="file"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            id="document-upload"
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.zip,.rar,.xls,.xlsx,.mp4,.avi,.mov"
+                          />
+                          <label htmlFor="document-upload" className="cursor-pointer">
+                            <ApperIcon name="Upload" className="w-12 h-12 text-surface-400 mx-auto mb-4" />
+                            <p className="text-surface-600 dark:text-surface-400 mb-2">
+                              {newDocument.file ? newDocument.file.name : 'Click to upload or drag and drop'}
+                            </p>
+                            <p className="text-sm text-surface-500 dark:text-surface-500">
+                              PDF, DOC, Images, ZIP files up to 50MB
+                            </p>
+                          </label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="label-text">Category *</label>
+                        <select
+                          value={newDocument.category}
+                          onChange={(e) => setNewDocument({...newDocument, category: e.target.value})}
+                          className="input-field"
+                          required
+                        >
+                          {documentCategories.map((category) => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Associate With</label>
+                        <select
+                          value={newDocument.associatedType}
+                          onChange={(e) => setNewDocument({...newDocument, associatedType: e.target.value, associatedId: ''})}
+                          className="input-field"
+                        >
+                          <option value="general">General</option>
+                          <option value="property">Property</option>
+                          <option value="client">Client</option>
+                          <option value="contract">Contract</option>
+                        </select>
+                      </div>
+                      {newDocument.associatedType === 'property' && (
+                        <div>
+                          <label className="label-text">Select Property</label>
+                          <select
+                            value={newDocument.associatedId}
+                            onChange={(e) => setNewDocument({...newDocument, associatedId: e.target.value})}
+                            className="input-field"
+                          >
+                            <option value="">Select a property</option>
+                            {properties.map((property) => (
+                              <option key={property.id} value={property.id}>
+                                {property.title} - {property.address}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {newDocument.associatedType === 'client' && (
+                        <div>
+                          <label className="label-text">Select Client</label>
+                          <select
+                            value={newDocument.associatedId}
+                            onChange={(e) => setNewDocument({...newDocument, associatedId: e.target.value})}
+                            className="input-field"
+                          >
+                            <option value="">Select a client</option>
+                            {clients.map((client) => (
+                              <option key={client.id} value={client.id}>
+                                {client.name} - {client.email}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {newDocument.associatedType === 'contract' && (
+                        <div>
+                          <label className="label-text">Select Contract</label>
+                          <select
+                            value={newDocument.associatedId}
+                            onChange={(e) => setNewDocument({...newDocument, associatedId: e.target.value})}
+                            className="input-field"
+                          >
+                            <option value="">Select a contract</option>
+                            {contracts.map((contract) => (
+                              <option key={contract.id} value={contract.id}>
+                                {contract.contractType} - {properties.find(p => p.id === contract.propertyId)?.title || 'Property'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div className="md:col-span-2">
+                        <label className="label-text">Tags (comma separated)</label>
+                        <input
+                          type="text"
+                          value={newDocument.tags}
+                          onChange={(e) => setNewDocument({...newDocument, tags: e.target.value})}
+                          className="input-field"
+                          placeholder="e.g., contract, legal, important"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="label-text">Description</label>
+                        <textarea
+                          value={newDocument.description}
+                          onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
+                          className="input-field"
+                          rows="3"
+                          placeholder="Brief description of the document..."
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <button type="submit" className="btn-primary">
+                        Upload Document
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowDocumentForm(false)}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Documents Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredDocuments.map((document, index) => (
+                <motion.div
+                  key={document.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="card card-hover"
+                >
+                  {editingDocumentId === document.id ? (
+                    <div className="p-6">
+                      <form onSubmit={handleSaveDocumentEdit} className="space-y-4">
+                        <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                          Edit Document
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="label-text">File Name</label>
+                            <input
+                              type="text"
+                              value={editDocument.fileName}
+                              onChange={(e) => setEditDocument({...editDocument, fileName: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Category</label>
+                            <select
+                              value={editDocument.category}
+                              onChange={(e) => setEditDocument({...editDocument, category: e.target.value})}
+                              className="input-field"
+                            >
+                              {documentCategories.map((category) => (
+                                <option key={category} value={category}>{category}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="label-text">Tags</label>
+                            <input
+                              type="text"
+                              value={editDocument.tags}
+                              onChange={(e) => setEditDocument({...editDocument, tags: e.target.value})}
+                              className="input-field"
+                            />
+                          </div>
+                          <div>
+                            <label className="label-text">Description</label>
+                            <textarea
+                              value={editDocument.description}
+                              onChange={(e) => setEditDocument({...editDocument, description: e.target.value})}
+                              className="input-field"
+                              rows="3"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                          <button type="submit" className="btn-primary">
+                            Save Changes
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelDocumentEdit}
+                            className="btn-secondary"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <ApperIcon 
+                              name={fileTypeIcons[document.fileType] || fileTypeIcons.default} 
+                              className="w-6 h-6 text-primary" 
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-1 line-clamp-2">
+                              {document.originalName}
+                            </h3>
+                            <span className="px-2 py-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 text-xs rounded">
+                              {document.category}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-4 text-sm text-surface-600 dark:text-surface-400">
+                        <div className="flex items-center">
+                          <ApperIcon name="HardDrive" className="w-4 h-4 mr-2" />
+                          <span>{formatFileSize(document.fileSize)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <ApperIcon name="Calendar" className="w-4 h-4 mr-2" />
+                          <span>{format(new Date(document.uploadDate), 'MMM dd, yyyy')}</span>
+                        </div>
+                        {document.associatedType !== 'general' && (
+                          <div className="flex items-center">
+                            <ApperIcon name="Link" className="w-4 h-4 mr-2" />
+                            <span className="capitalize">{document.associatedType}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {document.description && (
+                        <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3 mb-4">
+                          <p className="text-sm text-surface-600 dark:text-surface-400 line-clamp-2">
+                            {document.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {document.tags && document.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {document.tags.slice(0, 3).map((tag, tagIndex) => (
+                            <span
+                              key={tagIndex}
+                              className="px-2 py-1 bg-primary/10 text-primary text-xs rounded"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {document.tags.length > 3 && (
+                            <span className="px-2 py-1 bg-surface-200 dark:bg-surface-600 text-surface-600 dark:text-surface-400 text-xs rounded">
+                              +{document.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setViewingDocument(document)}
+                          className="flex-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Eye" className="w-4 h-4" />
+                          <span>View</span>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleEditDocument(document)}
+                          className="flex-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Edit" className="w-4 h-4" />
+                          <span>Edit</span>
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => deleteDocument(document.id)}
+                          className="px-3 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center"
+                        >
+                          <ApperIcon name="Trash2" className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {filteredDocuments.length === 0 && (
+              <div className="text-center py-12">
+                <ApperIcon name="FolderOpen" className="w-16 h-16 text-surface-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-surface-900 dark:text-surface-100 mb-2">
+                  No documents found
+                </h3>
+                <p className="text-surface-600 dark:text-surface-400 mb-4">
+                  {documentSearchTerm || documentFilterCategory !== 'All' || documentFilterType !== 'All'
+                    ? 'Try adjusting your search or filter criteria'
+                    : 'Get started by uploading your first document'
+                  }
+                </p>
+                {!documentSearchTerm && documentFilterCategory === 'All' && documentFilterType === 'All' && (
+                  <button
+                    onClick={() => setShowDocumentForm(true)}
+                    className="btn-primary"
+                  >
+                    Upload Your First Document
+                  </button>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {activeTab === 'analytics' && (
           <motion.div
@@ -2665,6 +3505,12 @@ const tabs = [
         )}
       </AnimatePresence>
       <AnimatePresence>
+{viewingDocument && (
+          <ViewDocumentModal
+            document={viewingDocument}
+            onClose={() => setViewingDocument(null)}
+          />
+        )}
         {viewingProperty && (
           <ViewPropertyModal
             property={viewingProperty}
