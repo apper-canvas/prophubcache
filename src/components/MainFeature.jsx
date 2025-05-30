@@ -86,6 +86,7 @@ const MainFeature = () => {
   const [showPropertyForm, setShowPropertyForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
+const [viewingProperty, setViewingProperty] = useState(null)
 const [editingPropertyId, setEditingPropertyId] = useState(null)
   const [editProperty, setEditProperty] = useState({
     title: '',
@@ -231,6 +232,123 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
     'Active': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
     'Qualified': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     'Inactive': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  }
+// View Property Modal Component
+  const ViewPropertyModal = ({ property, onClose }) => {
+    if (!property) return null
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-white dark:bg-surface-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="relative">
+            <img
+              src={property.images[0]}
+              alt={property.title}
+              className="w-full h-64 sm:h-80 object-cover"
+            />
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 bg-white/90 dark:bg-surface-800/90 rounded-full p-2 hover:bg-white dark:hover:bg-surface-700 transition-colors"
+            >
+              <ApperIcon name="X" className="w-5 h-5 text-surface-700 dark:text-surface-300" />
+            </button>
+            <div className="absolute bottom-4 left-4">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[property.status]}`}>
+                {property.status}
+              </span>
+            </div>
+          </div>
+          
+          <div className="p-6 max-h-[50vh] overflow-y-auto">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-2">
+                  {property.title}
+                </h2>
+                <p className="text-3xl font-bold text-primary mb-3">
+                  ${property.price.toLocaleString()}
+                </p>
+                <p className="text-surface-600 dark:text-surface-400 flex items-center">
+                  <ApperIcon name="MapPin" className="w-4 h-4 mr-2" />
+                  {property.address}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                <ApperIcon name="Bed" className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm text-surface-600 dark:text-surface-400">Bedrooms</p>
+                <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">{property.bedrooms}</p>
+              </div>
+              <div className="text-center p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                <ApperIcon name="Bath" className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm text-surface-600 dark:text-surface-400">Bathrooms</p>
+                <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">{property.bathrooms}</p>
+              </div>
+              <div className="text-center p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                <ApperIcon name="Square" className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm text-surface-600 dark:text-surface-400">Sq Ft</p>
+                <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">{property.squareFootage}</p>
+              </div>
+              <div className="text-center p-4 bg-surface-50 dark:bg-surface-700 rounded-xl">
+                <ApperIcon name="Home" className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <p className="text-sm text-surface-600 dark:text-surface-400">Type</p>
+                <p className="text-lg font-semibold text-surface-900 dark:text-surface-100">{property.propertyType}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-surface-200 dark:border-surface-600 pt-4">
+              <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-3">Property Details</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-surface-600 dark:text-surface-400">Listed Date:</span>
+                  <span className="ml-2 text-surface-900 dark:text-surface-100">
+                    {format(property.listingDate, 'PPP')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-surface-600 dark:text-surface-400">Property ID:</span>
+                  <span className="ml-2 text-surface-900 dark:text-surface-100">{property.id}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-surface-200 dark:border-surface-600 mt-6">
+              <button
+                onClick={() => {
+                  onClose()
+                  handleEditProperty(property)
+                }}
+                className="btn-primary flex items-center justify-center space-x-2"
+              >
+                <ApperIcon name="Edit" className="w-4 h-4" />
+                <span>Edit Property</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="btn-secondary flex items-center justify-center space-x-2"
+              >
+                <ApperIcon name="X" className="w-4 h-4" />
+                <span>Close</span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    )
   }
 
   return (
@@ -622,9 +740,19 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
                           <ApperIcon name="Edit" className="w-4 h-4" />
                           <span>Edit</span>
                         </motion.button>
-                        <motion.button
+<motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
+                          onClick={() => setViewingProperty(property)}
+                          className="flex-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                          <ApperIcon name="Eye" className="w-4 h-4" />
+                          <span>View</span>
+                        </motion.button>
+<motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setViewingProperty(property)}
                           className="flex-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center justify-center space-x-1"
                         >
                           <ApperIcon name="Eye" className="w-4 h-4" />
@@ -821,6 +949,15 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+{/* View Property Modal */}
+      <AnimatePresence>
+        {viewingProperty && (
+          <ViewPropertyModal
+            property={viewingProperty}
+            onClose={() => setViewingProperty(null)}
+          />
         )}
       </AnimatePresence>
     </div>
