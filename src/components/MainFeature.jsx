@@ -80,7 +80,8 @@ const MainFeature = () => {
     bathrooms: '',
     squareFootage: '',
     propertyType: 'House',
-    description: ''
+description: '',
+    url: ''
   })
 
   const [showPropertyForm, setShowPropertyForm] = useState(false)
@@ -96,7 +97,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
     bathrooms: '',
     squareFootage: '',
     propertyType: 'House',
-    description: ''
+description: '',
+    url: ''
   })
 
   const handleEditProperty = (property) => {
@@ -109,7 +111,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
       bathrooms: property.bathrooms.toString(),
       squareFootage: property.squareFootage.toString(),
       propertyType: property.propertyType,
-      description: property.description || ''
+description: property.description || '',
+      url: property.url || ''
     })
   }
 
@@ -128,7 +131,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
       bathrooms: parseInt(editProperty.bathrooms) || 0,
       squareFootage: parseInt(editProperty.squareFootage) || 0,
       propertyType: editProperty.propertyType,
-      description: editProperty.description
+description: editProperty.description,
+      url: editProperty.url
     }
 
     setProperties(properties.map(prop => 
@@ -145,8 +149,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
       bedrooms: '',
       bathrooms: '',
       squareFootage: '',
-      propertyType: 'House',
-      description: ''
+description: '',
+      url: ''
     })
     toast.success('Property updated successfully!')
   }
@@ -161,7 +165,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
       bathrooms: '',
       squareFootage: '',
       propertyType: 'House',
-      description: ''
+description: '',
+      url: ''
     })
   }
 
@@ -193,8 +198,8 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
       bedrooms: '',
       bathrooms: '',
       squareFootage: '',
-      propertyType: 'House',
-      description: ''
+description: '',
+      url: ''
     })
     setShowPropertyForm(false)
     toast.success('Property added successfully!')
@@ -558,6 +563,16 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
                           <option value="Apartment">Apartment</option>
                         </select>
                       </div>
+<div className="md:col-span-2">
+                        <label className="label-text">Property URL</label>
+                        <input
+                          type="url"
+                          value={newProperty.url}
+                          onChange={(e) => setNewProperty({...newProperty, url: e.target.value})}
+                          className="input-field"
+                          placeholder="https://example.com/property"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
                       <button type="submit" className="btn-primary">
@@ -679,6 +694,16 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
                               <option value="Townhouse">Townhouse</option>
                               <option value="Apartment">Apartment</option>
                             </select>
+                          </div>
+<div className="md:col-span-2">
+                            <label className="label-text">Property URL</label>
+                            <input
+                              type="url"
+                              value={editProperty.url}
+                              onChange={(e) => setEditProperty({...editProperty, url: e.target.value})}
+                              className="input-field"
+                              placeholder="https://example.com/property"
+                            />
                           </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -942,7 +967,7 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
           </motion.div>
         )}
       </AnimatePresence>
-{/* View Property Modal */}
+</AnimatePresence>
       <AnimatePresence>
         {viewingProperty && (
           <ViewPropertyModal
