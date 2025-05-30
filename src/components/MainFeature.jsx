@@ -1461,7 +1461,6 @@ description: '',
               </div>
             )}
           </motion.div>
-</motion.div>
         )}
 {activeTab === 'appointments' && (
           <motion.div
