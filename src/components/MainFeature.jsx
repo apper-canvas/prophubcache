@@ -749,15 +749,6 @@ const [editingPropertyId, setEditingPropertyId] = useState(null)
                           <ApperIcon name="Eye" className="w-4 h-4" />
                           <span>View</span>
                         </motion.button>
-<motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setViewingProperty(property)}
-                          className="flex-1 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 px-3 py-2 rounded-lg text-sm font-medium hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors flex items-center justify-center space-x-1"
-                        >
-                          <ApperIcon name="Eye" className="w-4 h-4" />
-                          <span>View</span>
-                        </motion.button>
                       </div>
                     </div>
                   )}
