@@ -84,6 +84,39 @@ description: '',
     url: ''
   })
 
+// Appointment management state
+  const [newAppointment, setNewAppointment] = useState({
+    propertyId: '',
+    clientId: '',
+    scheduledDate: '',
+    scheduledTime: '',
+    status: 'Scheduled',
+    type: 'Viewing',
+    notes: ''
+  })
+  
+  const [showAppointmentForm, setShowAppointmentForm] = useState(false)
+  const [appointmentSearchTerm, setAppointmentSearchTerm] = useState('')
+  const [appointmentFilterStatus, setAppointmentFilterStatus] = useState('All')
+  const [appointmentFilterType, setAppointmentFilterType] = useState('All')
+  const [editingAppointmentId, setEditingAppointmentId] = useState(null)
+  const [editAppointment, setEditAppointment] = useState({
+    propertyId: '',
+    clientId: '',
+    scheduledDate: '',
+    scheduledTime: '',
+    status: 'Scheduled',
+    type: 'Viewing',
+    notes: ''
+  })
+  
+  const appointmentStatusColors = {
+    'Scheduled': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    'Confirmed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    'Completed': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+    'Cancelled': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    'No Show': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+  }
 // Client management state
   const [newClient, setNewClient] = useState({
     name: '',
@@ -387,6 +420,144 @@ description: '',
     const matchesFilter = clientFilterStatus === 'All' || client.status === clientFilterStatus
     return matchesSearch && matchesFilter
   })
+// Appointment management functions
+  const handleAddAppointment = (e) => {
+    e.preventDefault()
+    if (!newAppointment.propertyId || !newAppointment.clientId || !newAppointment.scheduledDate || !newAppointment.scheduledTime) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Combine date and time
+    const scheduledDateTime = new Date(`${newAppointment.scheduledDate}T${newAppointment.scheduledTime}`)
+    
+    // Check if appointment is in the past
+    if (scheduledDateTime < new Date()) {
+      toast.error('Cannot schedule appointments in the past')
+      return
+    }
+
+    const appointment = {
+      id: Date.now().toString(),
+      propertyId: newAppointment.propertyId,
+      clientId: newAppointment.clientId,
+      scheduledDate: scheduledDateTime,
+      status: newAppointment.status,
+      type: newAppointment.type,
+      notes: newAppointment.notes
+    }
+
+    setAppointments([...appointments, appointment])
+    setNewAppointment({
+      propertyId: '',
+      clientId: '',
+      scheduledDate: '',
+      scheduledTime: '',
+      status: 'Scheduled',
+      type: 'Viewing',
+      notes: ''
+    })
+    setShowAppointmentForm(false)
+    toast.success('Appointment scheduled successfully!')
+  }
+
+  const handleEditAppointment = (appointment) => {
+    setEditingAppointmentId(appointment.id)
+    const appointmentDate = new Date(appointment.scheduledDate)
+    setEditAppointment({
+      propertyId: appointment.propertyId,
+      clientId: appointment.clientId,
+      scheduledDate: format(appointmentDate, 'yyyy-MM-dd'),
+      scheduledTime: format(appointmentDate, 'HH:mm'),
+      status: appointment.status,
+      type: appointment.type,
+      notes: appointment.notes
+    })
+  }
+
+  const handleSaveAppointmentEdit = (e) => {
+    e.preventDefault()
+    if (!editAppointment.propertyId || !editAppointment.clientId || !editAppointment.scheduledDate || !editAppointment.scheduledTime) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    // Combine date and time
+    const scheduledDateTime = new Date(`${editAppointment.scheduledDate}T${editAppointment.scheduledTime}`)
+
+    const updatedAppointment = {
+      propertyId: editAppointment.propertyId,
+      clientId: editAppointment.clientId,
+      scheduledDate: scheduledDateTime,
+      status: editAppointment.status,
+      type: editAppointment.type,
+      notes: editAppointment.notes
+    }
+
+    setAppointments(appointments.map(appointment => 
+      appointment.id === editingAppointmentId 
+        ? { ...appointment, ...updatedAppointment }
+        : appointment
+    ))
+
+    setEditingAppointmentId(null)
+    setEditAppointment({
+      propertyId: '',
+      clientId: '',
+      scheduledDate: '',
+      scheduledTime: '',
+      status: 'Scheduled',
+      type: 'Viewing',
+      notes: ''
+    })
+    toast.success('Appointment updated successfully!')
+  }
+
+  const handleCancelAppointmentEdit = () => {
+    setEditingAppointmentId(null)
+    setEditAppointment({
+      propertyId: '',
+      clientId: '',
+      scheduledDate: '',
+      scheduledTime: '',
+      status: 'Scheduled',
+      type: 'Viewing',
+      notes: ''
+    })
+  }
+
+  const updateAppointmentStatus = (id, newStatus) => {
+    setAppointments(appointments.map(appointment => 
+      appointment.id === id ? { ...appointment, status: newStatus } : appointment
+    ))
+    toast.success(`Appointment status updated to ${newStatus}`)
+  }
+
+  const deleteAppointment = (id) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
+      setAppointments(appointments.filter(appointment => appointment.id !== id))
+      toast.success('Appointment deleted successfully!')
+    }
+  }
+
+  const filteredAppointments = appointments.filter(appointment => {
+    const property = properties.find(p => p.id === appointment.propertyId)
+    const client = clients.find(c => c.id === appointment.clientId)
+    
+    const matchesSearch = appointmentSearchTerm === '' || 
+      (property?.title.toLowerCase().includes(appointmentSearchTerm.toLowerCase())) ||
+      (property?.address.toLowerCase().includes(appointmentSearchTerm.toLowerCase())) ||
+      (client?.name.toLowerCase().includes(appointmentSearchTerm.toLowerCase())) ||
+      (appointment.notes.toLowerCase().includes(appointmentSearchTerm.toLowerCase()))
+    
+    const matchesStatusFilter = appointmentFilterStatus === 'All' || appointment.status === appointmentFilterStatus
+    const matchesTypeFilter = appointmentFilterType === 'All' || appointment.type === appointmentFilterType
+    
+    return matchesSearch && matchesStatusFilter && matchesTypeFilter
+  })
+
+  // Sort appointments by date (upcoming first)
+  const sortedAppointments = filteredAppointments.sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate))
 // View Property Modal Component
   const ViewPropertyModal = ({ property, onClose }) => {
     if (!property) return null
@@ -531,11 +702,11 @@ description: '',
         {[
           { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
           { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-          { label: 'Pending Sales', value: properties.filter(p => p.status === 'Pending').length, icon: 'Clock', color: 'from-yellow-500 to-yellow-600' },
-          { label: 'This Month Revenue', value: '$125K', icon: 'DollarSign', color: 'from-purple-500 to-purple-600' }
-        ].map((stat, index) => (
+{[
+          { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
+          { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
+          { label: 'Appointments', value: appointments.filter(a => a.status === 'Scheduled' || a.status === 'Confirmed').length, icon: 'Calendar', color: 'from-purple-500 to-purple-600' },
           <motion.div
-            key={stat.label}
             whileHover={{ y: -4 }}
             className="card p-6 relative overflow-hidden"
           >
@@ -931,6 +1102,7 @@ description: '',
             </div>
           </motion.div>
         )}
+{activeTab === 'clients' && (
 
 <motion.div
             key="clients"
@@ -1292,7 +1464,7 @@ description: '',
             )}
           </motion.div>
 
-        {activeTab === 'appointments' && (
+{activeTab === 'appointments' && (
           <motion.div
             key="appointments"
             initial={{ opacity: 0, x: 20 }}
@@ -1300,43 +1472,409 @@ description: '',
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6"
           >
-            <div className="card p-6">
-              <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 mb-6">
-                Upcoming Appointments
-              </h3>
-              <div className="space-y-4">
-                {appointments.map((appointment) => {
-                  const property = properties.find(p => p.id === appointment.propertyId)
-                  const client = clients.find(c => c.id === appointment.clientId)
-                  
-                  return (
-                    <div key={appointment.id} className="bg-surface-50 dark:bg-surface-800 rounded-xl p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-surface-900 dark:text-surface-100">
-                            {property?.title}
-                          </h4>
-                          <p className="text-sm text-surface-600 dark:text-surface-400">
-                            Client: {client?.name} • {appointment.type}
-                          </p>
-                          <p className="text-sm text-surface-500 dark:text-surface-400">
-                            {format(appointment.scheduledDate, 'PPP p')}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs font-medium rounded-full">
-                            {appointment.status}
-                          </span>
-                          <button className="p-2 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300">
-                            <ApperIcon name="MoreHorizontal" className="w-4 h-4" />
-                          </button>
-                        </div>
+            {/* Appointments Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <ApperIcon name="Search" className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400" />
+                  <input
+                    type="text"
+                    placeholder="Search appointments..."
+                    value={appointmentSearchTerm}
+                    onChange={(e) => setAppointmentSearchTerm(e.target.value)}
+                    className="input-field pl-10"
+                  />
+                </div>
+                <select
+                  value={appointmentFilterStatus}
+                  onChange={(e) => setAppointmentFilterStatus(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Status</option>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                  <option value="No Show">No Show</option>
+                </select>
+                <select
+                  value={appointmentFilterType}
+                  onChange={(e) => setAppointmentFilterType(e.target.value)}
+                  className="input-field w-full sm:w-auto"
+                >
+                  <option value="All">All Types</option>
+                  <option value="Viewing">Viewing</option>
+                  <option value="Showing">Showing</option>
+                  <option value="Consultation">Consultation</option>
+                  <option value="Follow-up">Follow-up</option>
+                </select>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowAppointmentForm(true)}
+                className="btn-primary flex items-center space-x-2"
+              >
+                <ApperIcon name="Plus" className="w-5 h-5" />
+                <span>Schedule Appointment</span>
+              </motion.button>
+            </div>
+
+            {/* Add Appointment Form */}
+            <AnimatePresence>
+              {showAppointmentForm && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="card p-6"
+                >
+                  <form onSubmit={handleAddAppointment} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                      Schedule New Appointment
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="label-text">Property *</label>
+                        <select
+                          value={newAppointment.propertyId}
+                          onChange={(e) => setNewAppointment({...newAppointment, propertyId: e.target.value})}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Select a property</option>
+                          {properties.map((property) => (
+                            <option key={property.id} value={property.id}>
+                              {property.title} - {property.address}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Client *</label>
+                        <select
+                          value={newAppointment.clientId}
+                          onChange={(e) => setNewAppointment({...newAppointment, clientId: e.target.value})}
+                          className="input-field"
+                          required
+                        >
+                          <option value="">Select a client</option>
+                          {clients.map((client) => (
+                            <option key={client.id} value={client.id}>
+                              {client.name} - {client.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Date *</label>
+                        <input
+                          type="date"
+                          value={newAppointment.scheduledDate}
+                          onChange={(e) => setNewAppointment({...newAppointment, scheduledDate: e.target.value})}
+                          className="input-field"
+                          required
+                          min={format(new Date(), 'yyyy-MM-dd')}
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Time *</label>
+                        <input
+                          type="time"
+                          value={newAppointment.scheduledTime}
+                          onChange={(e) => setNewAppointment({...newAppointment, scheduledTime: e.target.value})}
+                          className="input-field"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label-text">Type</label>
+                        <select
+                          value={newAppointment.type}
+                          onChange={(e) => setNewAppointment({...newAppointment, type: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Viewing">Viewing</option>
+                          <option value="Showing">Showing</option>
+                          <option value="Consultation">Consultation</option>
+                          <option value="Follow-up">Follow-up</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-text">Status</label>
+                        <select
+                          value={newAppointment.status}
+                          onChange={(e) => setNewAppointment({...newAppointment, status: e.target.value})}
+                          className="input-field"
+                        >
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="Confirmed">Confirmed</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="label-text">Notes</label>
+                        <textarea
+                          value={newAppointment.notes}
+                          onChange={(e) => setNewAppointment({...newAppointment, notes: e.target.value})}
+                          className="input-field"
+                          rows="3"
+                          placeholder="Additional notes about the appointment..."
+                        />
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                      <button type="submit" className="btn-primary">
+                        Schedule Appointment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAppointmentForm(false)}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Appointments Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {sortedAppointments.map((appointment, index) => {
+                const property = properties.find(p => p.id === appointment.propertyId)
+                const client = clients.find(c => c.id === appointment.clientId)
+                
+                return (
+                  <motion.div
+                    key={appointment.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="card card-hover"
+                  >
+                    {editingAppointmentId === appointment.id ? (
+                      <div className="p-6">
+                        <form onSubmit={handleSaveAppointmentEdit} className="space-y-4">
+                          <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+                            Edit Appointment
+                          </h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="label-text">Property *</label>
+                              <select
+                                value={editAppointment.propertyId}
+                                onChange={(e) => setEditAppointment({...editAppointment, propertyId: e.target.value})}
+                                className="input-field"
+                                required
+                              >
+                                <option value="">Select a property</option>
+                                {properties.map((property) => (
+                                  <option key={property.id} value={property.id}>
+                                    {property.title} - {property.address}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="label-text">Client *</label>
+                              <select
+                                value={editAppointment.clientId}
+                                onChange={(e) => setEditAppointment({...editAppointment, clientId: e.target.value})}
+                                className="input-field"
+                                required
+                              >
+                                <option value="">Select a client</option>
+                                {clients.map((client) => (
+                                  <option key={client.id} value={client.id}>
+                                    {client.name} - {client.email}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="label-text">Date *</label>
+                                <input
+                                  type="date"
+                                  value={editAppointment.scheduledDate}
+                                  onChange={(e) => setEditAppointment({...editAppointment, scheduledDate: e.target.value})}
+                                  className="input-field"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="label-text">Time *</label>
+                                <input
+                                  type="time"
+                                  value={editAppointment.scheduledTime}
+                                  onChange={(e) => setEditAppointment({...editAppointment, scheduledTime: e.target.value})}
+                                  className="input-field"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="label-text">Type</label>
+                                <select
+                                  value={editAppointment.type}
+                                  onChange={(e) => setEditAppointment({...editAppointment, type: e.target.value})}
+                                  className="input-field"
+                                >
+                                  <option value="Viewing">Viewing</option>
+                                  <option value="Showing">Showing</option>
+                                  <option value="Consultation">Consultation</option>
+                                  <option value="Follow-up">Follow-up</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="label-text">Status</label>
+                                <select
+                                  value={editAppointment.status}
+                                  onChange={(e) => setEditAppointment({...editAppointment, status: e.target.value})}
+                                  className="input-field"
+                                >
+                                  <option value="Scheduled">Scheduled</option>
+                                  <option value="Confirmed">Confirmed</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                  <option value="No Show">No Show</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="label-text">Notes</label>
+                              <textarea
+                                value={editAppointment.notes}
+                                onChange={(e) => setEditAppointment({...editAppointment, notes: e.target.value})}
+                                className="input-field"
+                                rows="3"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                            <button type="submit" className="btn-primary">
+                              Save Changes
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelAppointmentEdit}
+                              className="btn-secondary"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : (
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
+                              {property?.title || 'Property Not Found'}
+                            </h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${appointmentStatusColors[appointment.status]}`}>
+                              {appointment.status}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
+                              {appointment.type}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-3 mb-4">
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="MapPin" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{property?.address || 'Address not available'}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="User" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{client?.name || 'Client not found'}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="Calendar" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{format(new Date(appointment.scheduledDate), 'PPP')}</span>
+                          </div>
+                          <div className="flex items-center text-surface-600 dark:text-surface-400">
+                            <ApperIcon name="Clock" className="w-4 h-4 mr-3" />
+                            <span className="text-sm">{format(new Date(appointment.scheduledDate), 'p')}</span>
+                          </div>
+                        </div>
+
+                        {appointment.notes && (
+                          <div className="bg-surface-50 dark:bg-surface-700 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-surface-600 dark:text-surface-400">
+                              {appointment.notes}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mb-4">
+                          <select
+                            value={appointment.status}
+                            onChange={(e) => updateAppointmentStatus(appointment.id, e.target.value)}
+                            className="text-xs px-2 py-1 border border-surface-300 dark:border-surface-600 rounded bg-surface-50 dark:bg-surface-900 text-surface-700 dark:text-surface-300"
+                          >
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="No Show">No Show</option>
+                          </select>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleEditAppointment(appointment)}
+                            className="flex-1 bg-primary text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <ApperIcon name="Edit" className="w-4 h-4" />
+                            <span>Edit</span>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => deleteAppointment(appointment.id)}
+                            className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <ApperIcon name="Trash2" className="w-4 h-4" />
+                            <span>Delete</span>
+                          </motion.button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
             </div>
+
+            {sortedAppointments.length === 0 && (
+              <div className="text-center py-12">
+                <ApperIcon name="Calendar" className="w-16 h-16 text-surface-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-surface-900 dark:text-surface-100 mb-2">
+                  No appointments found
+                </h3>
+                <p className="text-surface-600 dark:text-surface-400 mb-4">
+                  {appointmentSearchTerm || appointmentFilterStatus !== 'All' || appointmentFilterType !== 'All'
+                    ? 'Try adjusting your search or filter criteria'
+                    : 'Get started by scheduling your first appointment'
+                  }
+                </p>
+                {!appointmentSearchTerm && appointmentFilterStatus === 'All' && appointmentFilterType === 'All' && (
+                  <button
+                    onClick={() => setShowAppointmentForm(true)}
+                    className="btn-primary"
+                  >
+                    Schedule Your First Appointment
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
 
