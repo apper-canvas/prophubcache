@@ -702,11 +702,11 @@ description: '',
         {[
           { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
           { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-{[
-          { label: 'Active Properties', value: properties.filter(p => p.status === 'Available').length, icon: 'Home', color: 'from-blue-500 to-blue-600' },
-          { label: 'Total Clients', value: clients.length, icon: 'Users', color: 'from-green-500 to-green-600' },
-          { label: 'Appointments', value: appointments.filter(a => a.status === 'Scheduled' || a.status === 'Confirmed').length, icon: 'Calendar', color: 'from-purple-500 to-purple-600' },
+{ label: 'Appointments', value: appointments.filter(a => a.status === 'Scheduled' || a.status === 'Confirmed').length, icon: 'Calendar', color: 'from-purple-500 to-purple-600' },
+          { label: 'Revenue', value: '$125K', icon: 'TrendingUp', color: 'from-purple-500 to-purple-600' }
+        ].map((stat, index) => (
           <motion.div
+            key={index}
             whileHover={{ y: -4 }}
             className="card p-6 relative overflow-hidden"
           >
@@ -1103,9 +1103,7 @@ description: '',
           </motion.div>
         )}
 {activeTab === 'clients' && (
-
 <motion.div
-            key="clients"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -1463,7 +1461,8 @@ description: '',
               </div>
             )}
           </motion.div>
-
+</motion.div>
+        )}
 {activeTab === 'appointments' && (
           <motion.div
             key="appointments"
